@@ -1,6 +1,13 @@
 # Static analysis with golangci-lint. The enabled linters and settings live in
 # .golangci.yml (errcheck, govet, staticcheck, gosec, revive, gocritic,
 # prealloc, funlen, gocyclo, ...). Warnings are treated as errors.
+#
+# golangci-lint is installed with `go install` rather than through
+# golangci/golangci-lint-action. The prebuilt binaries shipped by the action are
+# compiled with an older Go toolchain and refuse to load a config whose go.mod
+# targets a newer Go ("the Go language version used to build golangci-lint is
+# lower than the targeted Go version"). Building it in place with the CI Go
+# toolchain sidesteps that mismatch entirely.
 name: Lint
 
 on:
@@ -19,17 +26,24 @@ jobs:
   golangci:
     name: golangci-lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: stable
           cache: true
 
+      - name: Install golangci-lint
+        # Compiles golangci-lint with the CI Go toolchain so its build Go version
+        # always meets or exceeds the go.mod target. setup-go places the binary
+        # in $(go env GOPATH)/bin, which it also adds to PATH.
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
+        run: golangci-lint run ./...
