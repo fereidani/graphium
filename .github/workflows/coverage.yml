@@ -1,0 +1,46 @@
+# Test coverage. Runs the suite with coverage instrumentation, prints a
+# per-function summary, and uploads the profile as a build artifact. No
+# external token or service is required.
+name: Coverage
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: Generate coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: go test -cover
+        run: go test -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_id }}
+          path: coverage.out
+          if-no-files-found: error

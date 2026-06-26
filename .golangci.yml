@@ -1,0 +1,81 @@
+# golangci-lint v2 configuration for graphium.
+#
+# The enabled linters and settings follow the project's high-integrity Go rules:
+# errors must be checked, functions stay small and shallow, and common bugs
+# (unhandled errors, ineffective assignments, unsafe use, performance footguns)
+# are caught automatically. Treat every warning as an error.
+
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - errcheck        # check that errors are handled
+    - govet           # go vet checks
+    - ineffassign     # detect ineffectual assignments
+    - staticcheck     # comprehensive static analysis (includes gosimple)
+    - unused          # find unused code
+    - gosec           # security-oriented checks
+    - revive          # readable, idiomatic style
+    - gocritic        # broad, opinionated checks
+    - misspell        # spelling in comments/strings
+    - unconvert       # detect unnecessary type conversions
+    - prealloc        # suggest slice preallocation
+    - unparam         # detect unused function parameters
+    - gocyclo         # function cyclomatic complexity
+    - funlen          # function length
+    - nakedret        # detect naked returns in long functions
+    - bodyclose       # ensure http.Response.Body is closed
+    - copyloopvar     # loop variable copy (Go 1.22+ semantics)
+    - dupword         # detect duplicate words in comments
+    - errorlint       # safer error handling (Is/As, %w)
+    - nilnil          # return both nil error and nil value
+    - testifylint     # sane testify usage
+
+  settings:
+    gocyclo:
+      min-complexity: 15
+    funlen:
+      lines: 80
+      statements: 50
+    revive:
+      severity: warning
+      rules:
+        - name: exported
+          disabled: true # the API is documented via doc comments; allow short names
+    prealloc:
+      simple: true
+      for-loops: true
+    gosec:
+      # math/rand is used intentionally for deterministic graph generation in
+      # the gen package and in tests/benchmarks. It never protects secrets or
+      # produces security-relevant randomness, so the weak-RNG warning is
+      # disabled globally.
+      excludes:
+        - G404
+
+  exclusions:
+    generated: lax
+    presets:
+      - legacy # v2 preset that keeps the default test and common exclusions
+    paths:
+      - "petgraph" # vendored Rust reference source, not part of the module
+      - third_party$
+      - builtin$
+      - examples$
+
+issues:
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/fereidani/graphium

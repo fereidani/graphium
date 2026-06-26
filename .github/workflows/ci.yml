@@ -1,0 +1,66 @@
+# Continuous integration: build with pointer checking, vet, and run the test
+# suite across operating systems and supported Go versions. A separate job
+# runs the race detector on Linux (it needs cgo).
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (go ${{ matrix.go }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ['1.26.x', 'stable']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      - name: Build with pointer checking
+        run: go build -gcflags='all=-d=checkptr' ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -count=1 ./...
+
+  race:
+    name: Race detector
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: go test -race
+        run: go test -race -count=1 ./...

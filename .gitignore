@@ -1,0 +1,18 @@
+# Test coverage profiles and HTML reports.
+coverage.out
+coverage.html
+*.coverprofile
+
+# Compiled test binaries and build output.
+*.test
+*.exe
+/graphium
+
+# Operating-system files.
+.DS_Store
+Thumbs.db
+
+# Editor / IDE files.
+*.swp
+.idea/
+.vscode/

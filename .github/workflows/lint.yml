@@ -1,0 +1,35 @@
+# Static analysis with golangci-lint. The enabled linters and settings live in
+# .golangci.yml (errcheck, govet, staticcheck, gosec, revive, gocritic,
+# prealloc, funlen, gocyclo, ...). Warnings are treated as errors.
+name: Lint
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golangci:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
